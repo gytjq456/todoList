@@ -1,114 +1,117 @@
-let taskInput = document.querySelector('#task-input');
-let addButton = document.querySelector('#add-button');
-let tabs = document.querySelectorAll('.task-tabs div');
+let userInput = document.querySelector(".task-input");
+let addButton = document.querySelector(".button-add");
+let tabs = document.querySelectorAll(".tab-type div");
+let underLine = document.getElementById("tab-underline");
 let taskList = [];
-let mode = 'all';
-let filterList = []
+let selectedMenu = "tab-all";
+let filteredList = [];
 
-addButton.addEventListener('click', addTask)
-
-
+addButton.addEventListener("mousedown", addTask);
+userInput.addEventListener("keyup", function (event) {
+	if (event.keyCode === 13) {
+		addTask(event);
+	}
+});
 for (let i = 0; i < tabs.length; i++) {
-	tabs[i].addEventListener('click', function (event) {
-		filter(event)
-	})
+	tabs[i].addEventListener("click", function (event) {
+		filter(event);
+	});
 }
 
 function addTask() {
-	let task = {
-		id: randomIDGenerate(),
-		taskContent: taskInput.value,
-		isComplete: false
-	}
-	taskList.push(task)
-	render()
-}
 
+	let taskValue = userInput.value;
+	let task = {
+		content: taskValue,
+		isComplete: false,
+		id: randomIDGenerator(),
+	};
+
+	taskList.push(task);
+	userInput.value = "";
+	render();
+}
 
 function render() {
-	let list = [];
-	if (mode == 'all') {
-		list = taskList
-	} else if (mode == 'ongoing' || mode == 'done') {
-		list = filterList;
+	let result = "";
+	list = [];
+	if (selectedMenu === "tab-all") {
+		list = taskList;
+	} else {
+		list = filteredList;
 	}
-	console.log(list);
-	let resultHTML = '';
+
 	for (let i = 0; i < list.length; i++) {
 		if (list[i].isComplete) {
-			resultHTML += `<div class="task">
-				<div class="task-done">${list[i].taskContent}</div> 
-				<div>
-					<button onclick="toggleComplete('${list[i].id}')">Check</button>
-					<button>Delete</button>
-				</div>
-			</div>`
+			result += `<div class="task task-done" id="${list[i].id}">
+            <span>${list[i].content}</span>
+            <div class="button-box">
+            <button onclick="toggleDone('${list[i].id}')"><i class="fas fa-undo-alt"></i></button>
+            <button onclick="deleteTask('${list[i].id}')"><i class="fa fa-trash"></i></button>
+            </div>
+        </div>`;
 		} else {
-			resultHTML += `<div class="task">
-				<div>${list[i].taskContent}</div> 
-				<div>
-					<button onclick="toggleComplete('${list[i].id}')">Check</button>
-					<button onclick="deleteTask('${list[i].id}')">Delete</button>
-				</div>
-			</div>`
+			result += `<div class="task" id="${list[i].id}" >
+            <span>${list[i].content}</span>
+            <div class="button-box">
+            <button onclick="toggleDone('${list[i].id}')"><i class="fa fa-check"></i></button>
+            <button onclick="deleteTask('${list[i].id}')"><i class="fa fa-trash"></i></button>
+            </div>
+        </div>`;
 		}
 	}
-	document.querySelector('#task-board').innerHTML = resultHTML;
 
+	document.getElementById("task-board").innerHTML = result;
 }
 
-function toggleComplete(id) {
+function toggleDone(id) {
 	for (let i = 0; i < taskList.length; i++) {
-		if (taskList[i].id == id) {
+		if (taskList[i].id === id) {
 			taskList[i].isComplete = !taskList[i].isComplete;
 			break;
 		}
 	}
-	render()
+	filter();
 }
 
 function deleteTask(id) {
 	for (let i = 0; i < taskList.length; i++) {
-		if (taskList[i].id == id) {
+		if (taskList[i].id === id) {
 			taskList.splice(i, 1);
-			break;
 		}
 	}
-	render()
+
+	filter();
 }
+function filter(e) {
+	if (e) {
+		selectedMenu = e.target.id;
+		underLine.style.width = e.target.offsetWidth + "px";
+		underLine.style.left = e.target.offsetLeft + "px";
+		underLine.style.top =
+			e.target.offsetTop + (e.target.offsetHeight - 4) + "px";
+	}
 
-function filter(event) {
-	mode = event.target.id
-	filterList = [];
-
-	document.querySelector('#under-line').style.width = event.target.offsetWidth + 'px';
-	document.querySelector('#under-line').style.top = event.target.offsetHeight + 'px';
-	document.querySelector('#under-line').style.left = event.target.offsetLeft + 'px';
-	if (mode == 'all') {
-		render();
-	} else if (mode == 'ongoing') {
-		// 진행중인 아이템
+	filteredList = [];
+	if (selectedMenu === "tab-not-done") {
 		for (let i = 0; i < taskList.length; i++) {
 			if (taskList[i].isComplete == false) {
-				filterList.push(taskList[i]);
+				filteredList.push(taskList[i]);
 			}
 		}
-		console.log(filterList);
-		render();
-	} else if (mode == 'done') {
+	} else if (selectedMenu === "tab-done") {
 		for (let i = 0; i < taskList.length; i++) {
-			if (taskList[i].isComplete == true) {
-				filterList.push(taskList[i]);
+			if (taskList[i].isComplete) {
+				filteredList.push(taskList[i]);
 			}
 		}
-		render();
 	}
+	render();
 }
 
-function randomIDGenerate() {
-	return '_' + (
-		Number(String(Math.random()).slice(2)) +
-		Date.now() +
-		Math.round(performance.now())
-	).toString(36);
+function randomIDGenerator() {
+	// Math.random should be unique because of its seeding algorithm.
+	// Convert it to base 36 (numbers + letters), and grab the first 9 characters
+	// after the decimal.
+	return "_" + Math.random().toString(36).substr(2, 9);
 }
